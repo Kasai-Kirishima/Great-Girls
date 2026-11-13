@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11121a">
+  <meta name="description" content="Great Girls — браузерная коллекционная карточная игра">
+  <title>Great Girls — Collect. Develop. Battle.</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-theme="midnight">
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-lockup">
+        <div class="brand-mark">GG</div>
+        <div><div class="brand-name">GREAT GIRLS</div><div class="brand-tag">COLLECT · DEVELOP · BATTLE</div></div>
+      </div>
+      <div class="side-label" data-i18n="menu">МЕНЮ</div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="home"><span>⌂</span><b data-i18n="overview">Обзор</b></button>
+        <button class="nav-item" data-view="collection"><span>▤</span><b data-i18n="collection">Коллекция</b><i class="nav-count" id="collectionCount">0</i></button>
+        <button class="nav-item" data-view="shop"><span>◇</span><b data-i18n="shop">Магазин</b></button>
+        <button class="nav-item" data-view="packs"><span>▣</span><b data-i18n="packs">Паки</b></button>
+        <button class="nav-item" data-view="battle"><span>⚔</span><b data-i18n="battle">Сражения</b></button>
+        <button class="nav-item" data-view="relations"><span>♡</span><b data-i18n="relations">Отношения</b></button>
+      </nav>
+      <div class="side-label secondary-label" data-i18n="extras">ДРУГОЕ</div>
+      <nav class="main-nav">
+        <button class="nav-item" data-view="promos"><span>⌘</span><b data-i18n="promocodes">Промокоды</b></button>
+        <button class="nav-item" data-view="settings"><span>⚙</span><b data-i18n="settings">Настройки</b></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="version-chip"><span class="live-dot"></span> GG OFFLINE · V0.2</div>
+        <div class="sidebar-note">ТВОЯ КОЛЛЕКЦИЯ. ТВОЯ ИСТОРИЯ.</div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open menu">☰</button>
+        <div class="crumb"><span>GREAT GIRLS</span><b>/</b><strong id="pageTitle">Обзор</strong></div>
+        <div class="topbar-right">
+          <div class="currency-pill cash"><span>▰</span><strong id="cashValue">0</strong><small>BN</small></div>
+          <div class="currency-pill ruby"><span>◆</span><strong id="rubyValue">0</strong><small>R</small></div>
+          <button class="avatar-button" id="profileButton" title="Профиль">GG</button>
+        </div>
+      </header>
+
+      <div class="content-area" id="contentArea" aria-live="polite"></div>
+      <footer class="footer"><span>GREAT GIRLS <b>©</b> 2026</span><span>OFFLINE BUILD · ДАННЫЕ ХРАНЯТСЯ В ЭТОМ БРАУЗЕРЕ</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+      <div id="modalContent"></div>
+    </section>
+  </div>
+  <div class="toast-stack" id="toastStack"></div>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
