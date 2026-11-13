@@ -124,3 +124,14 @@ body[data-theme="violet"]{--accent:#b18aff;--accent2:#8055db}body[data-theme="sa
 .promo-form { margin: 0; }
 .promo-form input { letter-spacing: .08em; }
 @media(max-width:760px){.card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.character-card .portrait-wrap,.catalog-card-open .portrait-wrap{aspect-ratio:2/3.15}.catalog-card-open .catalog-status{bottom:54px}}
+
+
+/* Random opponent matchmaking */
+.match-search-card,.match-found-card{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:15px;padding:16px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(120deg,rgba(255,255,255,.045),color-mix(in srgb,var(--accent) 7%,var(--panel)));}
+.match-search-card>div,.match-found-info{display:grid;gap:5px;min-width:0;}
+.match-search-card b,.match-found-info>b{font-size:12px;}
+.match-search-card span,.match-found-info small{font-size:8px;color:var(--muted);}
+.match-found-info>b span{font-size:9px;font-weight:500;color:var(--muted);}
+.match-found-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.match-found-actions .btn,.match-search-card>.btn{white-space:nowrap;}
+@media(max-width:760px){.match-search-card,.match-found-card{align-items:stretch;flex-direction:column;gap:12px;padding:13px}.match-found-actions{display:grid;grid-template-columns:1fr 1fr}.match-found-actions .btn,.match-search-card>.btn{width:100%;font-size:8px;padding:10px 8px}.arena-hero h1{font-size:clamp(27px,7vw,39px)}}

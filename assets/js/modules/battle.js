@@ -10,37 +10,46 @@ function syncBattleDay(){
   if(state.matchStats.healing==null)state.matchStats.healing=0;
   if(!Array.isArray(state.matchHistory))state.matchHistory=[];
 }
-function currentBot(){return (window.GG_BOTS||[]).find(x=>x.id===state.selectedBotId)||window.GG_BOTS[0];}
-function selectBot(botId){
-  if(!(window.GG_BOTS||[]).some(x=>x.id===botId))return;
-  state.selectedBotId=botId;
+function currentBot(){return (window.GG_BOTS||[]).find(x=>x.id===state.selectedBotId)||null;}
+function findOpponent(){
+  syncBattleDay();
+  if(state.battlesToday>=MAX_DAILY_MATCHES){toast('На сегодня доступно не больше 10 матчей.','error');return;}
+  if(ownedEntries().length<3){toast('Для подбора соперника нужны минимум 3 карточки.','error');return;}
+  const bots=window.GG_BOTS||[];
+  if(!bots.length){toast('Сейчас нет доступных соперников.','error');return;}
+  const previous=state.selectedBotId;
+  const pool=bots.length>1?bots.filter(bot=>bot.id!==previous):bots;
+  const bot=pool[Math.floor(Math.random()*pool.length)];
+  state.selectedBotId=bot.id;
+  state.matchFound=true;
   save();
+  toast(`Соперник найден: ${bot.name}.`);
   render();
 }
 function renderBattle(){
   syncBattleDay();
   if(battleSession)return renderBattleSession();
   const owned=ownedEntries();
-  const bot=currentBot();
+  const bot=state.matchFound?currentBot():null;
   const stats=state.matchStats;
   const remaining=Math.max(0,MAX_DAILY_MATCHES-state.battlesToday);
   const winRate=stats.played?Math.round(stats.wins/stats.played*100):0;
   const teamOptions=owned.map((x,j)=>({id:x.inst.instanceId,name:x.card.name,rating:getRating(x.card,x.inst),j}));
-  const botCards=(window.GG_BOTS||[]).map(b=>{
-    const selected=b.id===bot.id;
-    const faces=b.cardIds.map(id=>{const c=getData(id);return c?`<span class="bot-face" title="${escapeHTML(c.name)}">${c.name.slice(0,1)}</span>`:''}).join('');
-    return `<button class="bot-card ${selected?'selected':''} ${b.rank>=26?'bot-boss':''}" data-action="bot-select" data-id="${b.id}" aria-pressed="${selected}"><span class="bot-rank">${String(b.rank).padStart(2,'0')}</span><span class="bot-name">${escapeHTML(b.name)}</span><span class="bot-division">${escapeHTML(b.division)}</span><span class="bot-faces">${faces}</span><span class="bot-rating">Уровень ${b.rank}</span></button>`;
-  }).join('');
+  const botFaces=bot?bot.cardIds.map(id=>{
+    const c=getData(id);
+    return c?`<span class="bot-face" title="${escapeHTML(c.name)}">${escapeHTML(c.name.slice(0,1))}</span>`:'';
+  }).join(''):'';
+  const opponentBlock=bot
+    ? `<div class="match-found-card"><div class="match-found-info"><small>СЛУЧАЙНЫЙ СОПЕРНИК НАЙДЕН</small><b>${escapeHTML(bot.name)} <span>· ${escapeHTML(bot.division)} · уровень ${bot.rank}/30</span></b><div class="bot-faces">${botFaces}</div></div><div class="match-found-actions"><button class="btn btn-secondary" data-action="match-find" ${remaining<=0?'disabled':''}>ИСКАТЬ ДРУГОГО</button><button class="btn btn-primary" data-action="battle-start" ${owned.length<3||remaining<=0?'disabled':''}>⚔ НАЧАТЬ БОЙ</button></div></div>`
+    : `<div class="match-search-card"><div><b>Соперник ещё не найден</b><span>Система случайно выберет одного из 30 ботов.</span></div><button class="btn btn-primary" data-action="match-find" ${owned.length<3||remaining<=0?'disabled':''}>⌕ НАЙТИ СОПЕРНИКА</button></div>`;
   const recent=state.matchHistory.slice(0,8).map((m,i)=>`<button type="button" class="match-history-row" data-action="match-details" data-index="${i}"><span class="match-result-dot ${m.result==='win'?'is-win':'is-loss'}"></span><div class="match-history-main"><b>${escapeHTML(m.botName||'Соперник')}</b><small>${escapeHTML(m.dateLabel||new Date(m.date||Date.now()).toLocaleDateString('ru-RU'))} · ${m.rounds||1} раунд.</small></div><strong class="${m.result==='win'?'good-text':'bad-text'}">${m.result==='win'?'ПОБЕДА':'ПОРАЖЕНИЕ'}</strong><span class="match-reward">+${money(m.reward||0)} BN</span></button>`).join('');
-  return `${`<section class="arena-hero"><div class="arena-hero-glow"></div><div class="arena-hero-copy"><div class="eyebrow">GREAT GIRLS · COMBAT LEAGUE</div><h1>АРЕНА</h1><p>Выбери соперника. Собери отряд. Победи.</p><div class="arena-hero-tags"><span>3 VS 3</span><span>ПОШАГОВЫЙ БОЙ</span><span>30 БОТОВ</span></div></div><div class="arena-hero-emblem">⚔</div></section>`}
+  return `<section class="arena-hero"><div class="arena-hero-glow"></div><div class="arena-hero-copy"><div class="eyebrow">GREAT GIRLS · MATCHMAKING</div><h1>ПОДБОР СОПЕРНИКА</h1><p>Собери отряд из трёх карточек и найди случайного бота.</p><div class="arena-hero-tags"><span>3 VS 3</span><span>ПОШАГОВЫЙ БОЙ</span><span>30 ВОЗМОЖНЫХ СОПЕРНИКОВ</span></div></div><div class="arena-hero-emblem">⌕</div></section>
     <section class="match-stat-grid match-stat-grid-primary"><div class="match-stat panel"><small>МАТЧИ</small><b>${stats.played}</b></div><div class="match-stat panel"><small>ПОБЕДЫ</small><b>${stats.wins}</b></div><div class="match-stat panel"><small>ПОРАЖЕНИЯ</small><b>${stats.losses}</b></div><div class="match-stat panel"><small>WIN RATE</small><b>${winRate}%</b></div><div class="match-stat panel"><small>ТЕКУЩАЯ СЕРИЯ</small><b>${stats.streak||0}</b></div><div class="match-stat panel"><small>ЛУЧШАЯ СЕРИЯ</small><b>${stats.bestStreak||0}</b></div></section><section class="match-stat-grid match-stat-grid-secondary"><div class="match-stat panel"><small>НАНЕСЕНО УРОНА</small><b>${money(stats.damageDealt||0)}</b></div><div class="match-stat panel"><small>ПОЛУЧЕНО УРОНА</small><b>${money(stats.damageTaken||0)}</b></div><div class="match-stat panel"><small>ЛЕЧЕНИЕ</small><b>${money(stats.healing||0)}</b></div><div class="match-stat panel"><small>ПОБЕЖДЕНО</small><b>${stats.knockouts||0}</b></div></section>
-    <section class="panel arena-setup"><div class="arena-setup-top"><div><div class="eyebrow">MATCHMAKING</div><h2>Подготовка к матчу</h2></div><div class="match-limit"><b>${remaining}/${MAX_DAILY_MATCHES}</b><span>матчей сегодня</span></div></div>
+    <section class="panel arena-setup"><div class="arena-setup-top"><div><div class="eyebrow">MATCHMAKING</div><h2>Подготовка к бою</h2></div><div class="match-limit"><b>${remaining}/${MAX_DAILY_MATCHES}</b><span>матчей сегодня</span></div></div>
       ${owned.length>=3?`<div class="squad-select-grid">${[0,1,2].map(i=>`<label class="squad-slot"><span>БОЕЦ 0${i+1}</span><select class="select-input team-select" data-slot="${i}">${teamOptions.map((x,j)=>`<option value="${x.id}" ${j===i?'selected':''}>${escapeHTML(x.name)} · ${x.rating}</option>`).join('')}</select></label>`).join('')}</div>`:`<div class="battle-needs-cards"><b>Нужно минимум 3 карточки</b><button class="btn btn-primary" data-action="navigate" data-view="shop">Открыть магазин</button></div>`}
-      <div class="selected-bot-line"><div><small>ВЫБРАННЫЙ СОПЕРНИК</small><b>${escapeHTML(bot.name)} <span>· ${bot.division} ${bot.rank}/30</span></b></div><button class="btn btn-primary" data-action="battle-start" ${owned.length<3||remaining<=0?'disabled':''}>⚔ НАЧАТЬ МАТЧ</button></div>
+      ${opponentBlock}
       ${remaining<=0?'<p class="limit-note">Лимит на сегодня исчерпан. Новые матчи откроются после 00:00.</p>':''}
     </section>
-    <div class="section-head arena-section-head"><div><div class="eyebrow">CHOOSE YOUR RIVAL</div><h2 class="section-title">Список соперников</h2></div><span class="tag">30 БОТОВ</span></div>
-    <div class="bot-grid">${botCards}</div>
     <section class="panel match-history-panel"><div class="history-head"><div><div class="eyebrow">CAREER RECORD</div><h2 class="section-title">Последние матчи</h2></div><span class="tag">${state.matchHistory.length} / 30</span></div>${recent?`<div class="match-history-list">${recent}</div>`:'<div class="history-empty">Здесь появятся результаты твоих первых сражений.</div>'}</section>`;
 }
 function startBattle(){
@@ -49,8 +58,8 @@ function startBattle(){
   const selects=$$('.team-select');
   const ids=selects.map(s=>s.value);
   if(ids.length!==3||new Set(ids).size!==3){toast('Выбери три разные карточки.','error');return;}
-  const bot=currentBot();
-  if(!bot){toast('Соперник не найден.','error');return;}
+  const bot=state.matchFound?currentBot():null;
+  if(!bot){toast('Сначала найди случайного соперника.','error');return;}
   const allies=ids.map(id=>makeFighter(getOwned(id),null,1,'ally'));
   const enemyScale=.80+bot.rank*.02;
   const enemies=bot.cardIds.map(id=>getData(id)).filter(Boolean).map(c=>makeFighter(null,c,enemyScale,'enemy'));
@@ -60,7 +69,7 @@ function startBattle(){
   battleSession={
     botId:bot.id,botName:bot.name,botRank:bot.rank,botDivision:bot.division,
     round:1,allies,enemies,selected:0,target:0,allyTarget:0,acted:[],
-    log:[`${bot.name} выходит на арену. Матч начался.`],finished:false,result:null,
+    log:[`${bot.name} найден. Матч начался.`],finished:false,result:null,
     startedAt:Date.now(),stats:{damageDealt:0,damageTaken:0,healing:0,knockouts:0,actions:0}
   };
   render();
@@ -101,7 +110,7 @@ function renderBattleSession(){
   if(b.finished){
     const win=b.result==='win';
     const reward=b.reward||0;
-    return `<section class="battle-result-screen ${win?'result-win':'result-loss'}"><div class="result-sparks">✦　✧　✦</div><div class="eyebrow">GREAT GIRLS · MATCH RESULT</div><div class="result-versus">${win?'VICTORY':'DEFEAT'}</div><div class="result-opponent">${escapeHTML(b.botName)} · ${b.botDivision} ${b.botRank}/30</div><div class="result-reward">+${money(reward)} <small>БАНКНОТ</small></div><div class="result-stat-row"><div><b>${b.round}</b><span>РАУНДОВ</span></div><div><b>${b.stats.damageDealt}</b><span>НАНЕСЕНО</span></div><div><b>${b.stats.damageTaken}</b><span>ПОЛУЧЕНО</span></div><div><b>${b.stats.healing}</b><span>ЛЕЧЕНИЕ</span></div><div><b>${b.stats.knockouts}</b><span>ПОБЕЖДЕНО</span></div><div><b>${Math.round((Date.now()-b.startedAt)/1000)}с</b><span>ВРЕМЯ</span></div></div><div class="result-team">${b.allies.map(f=>`<div class="result-unit ${f.hp<=0?'dead':''}"><b>${escapeHTML(f.name)}</b><span>${Math.max(0,f.hp)} / ${f.hpMax} HP</span></div>`).join('')}</div><button class="btn btn-primary result-exit" data-action="battle-exit">ВЕРНУТЬСЯ В АРЕНУ</button></section>`;
+    return `<section class="battle-result-screen ${win?'result-win':'result-loss'}"><div class="result-sparks">✦　✧　✦</div><div class="eyebrow">GREAT GIRLS · MATCH RESULT</div><div class="result-versus">${win?'VICTORY':'DEFEAT'}</div><div class="result-opponent">${escapeHTML(b.botName)} · ${b.botDivision} ${b.botRank}/30</div><div class="result-reward">+${money(reward)} <small>БАНКНОТ</small></div><div class="result-stat-row"><div><b>${b.round}</b><span>РАУНДОВ</span></div><div><b>${b.stats.damageDealt}</b><span>НАНЕСЕНО</span></div><div><b>${b.stats.damageTaken}</b><span>ПОЛУЧЕНО</span></div><div><b>${b.stats.healing}</b><span>ЛЕЧЕНИЕ</span></div><div><b>${b.stats.knockouts}</b><span>ПОБЕЖДЕНО</span></div><div><b>${Math.round((Date.now()-b.startedAt)/1000)}с</b><span>ВРЕМЯ</span></div></div><div class="result-team">${b.allies.map(f=>`<div class="result-unit ${f.hp<=0?'dead':''}"><b>${escapeHTML(f.name)}</b><span>${Math.max(0,f.hp)} / ${f.hpMax} HP</span></div>`).join('')}</div><button class="btn btn-primary result-exit" data-action="battle-exit">ВЕРНУТЬСЯ К ПОДБОРУ</button></section>`;
   }
   if(!selected||!card)return '<div class="empty-state">Нет доступных бойцов.</div>';
   const skills=card.skills.map((sk,i)=>{
@@ -111,7 +120,7 @@ function renderBattleSession(){
     return `<button class="battle-skill" data-action="battle-skill" data-index="${i}" ${disabled?'disabled':''}><span class="skill-cost">${sk.cost} MP</span><b>${escapeHTML(sk.name)}</b><small>${escapeHTML(sk.desc)}</small><em>${targetLabel}${up?` · +${up}`:''}${sk.once?' · 1 РАЗ ЗА БОЙ':''}</em></button>`;
   }).join('');
   const aliveTargets=b.allies.map((f,i)=>({f,i})).filter(x=>x.f.hp>0);
-  return `<section class="battle-match"><header class="match-cinematic-head"><div class="match-round-label"><span>РАУНД</span><b>${String(b.round).padStart(2,'0')}</b></div><div class="match-vs-title"><small>GREAT GIRLS ARENA</small><strong>VS</strong><span>${escapeHTML(b.botName)} · ${b.botRank}/30</span></div><div class="match-turn-label"><b>${pending}</b><span>ХОДОВ ОСТАЛОСЬ</span></div></header>
+  return `<section class="battle-match"><header class="match-cinematic-head"><div class="match-round-label"><span>РАУНД</span><b>${String(b.round).padStart(2,'0')}</b></div><div class="match-vs-title"><small>GREAT GIRLS BATTLE</small><strong>VS</strong><span>${escapeHTML(b.botName)} · ${b.botRank}/30</span></div><div class="match-turn-label"><b>${pending}</b><span>ХОДОВ ОСТАЛОСЬ</span></div></header>
     <div class="battle-scoreboard"><div><span>ТВОЙ ОТРЯД</span><b>${b.allies.filter(f=>f.hp>0).length}/3</b></div><div class="scoreboard-vs">VS</div><div><span>${escapeHTML(b.botName).toUpperCase()}</span><b>${b.enemies.filter(f=>f.hp>0).length}/3</b></div></div>
     <section class="battle-arena"><div class="battle-side-title"><span>✦</span> ТВОЯ КОМАНДА</div><div class="battlefighters">${b.allies.map((f,i)=>fighterHtml(f,i,'ally')).join('')}</div><div class="arena-divider"><span>VS</span></div><div class="battle-side-title enemy-side-title">КОМАНДА СОПЕРНИКА <span>${b.botDivision.toUpperCase()}</span></div><div class="battlefighters">${b.enemies.map((f,i)=>fighterHtml(f,i,'enemy')).join('')}</div></section>
     <section class="battle-command panel"><div class="command-active"><div class="command-unit-icon">${escapeHTML(selected.name.slice(0,1))}</div><div class="command-active-copy"><small>СЕЙЧАС ДЕЙСТВУЕТ</small><b>${escapeHTML(selected.name)}</b><span>${selected.hp}/${selected.hpMax} HP · ${selected.mana}/${selected.manaMax} MP</span></div><div class="command-acted">${b.acted.length}/${b.allies.filter(f=>f.hp>0).length} ДЕЙСТВИЙ</div></div>
@@ -187,7 +196,6 @@ function useBattleSkill(index){
     case'buff':targetInfo.target.buff=Math.min(30,targetInfo.target.buff+val);battleLog(`${user.name} усиливает следующую атаку ${targetInfo.target.name} на ${val}%.`);break;
     case'stunDamage':doDamage(targetInfo.target,val);if(targetInfo.target.hp>0){targetInfo.target.stunned=true;battleLog(`${targetInfo.target.name} оглушён.`);}break;
     case'riskheal':{const target=targetInfo.target;const selfDamage=applyBattleDamage(target,sk.damage);target.regen.push({amount:val,turns:1,delayed:true});battleLog(`${user.name}: ${target.name} получает ${selfDamage} урона, затем восстановит ${val} HP.`);break;}
-    case'percentDamage':{const target=targetInfo.target;const amount=Math.min(Math.max(0,target.hp-1),Math.floor(target.hp*sk.value/100));const dealt=applyBattleDamage(target,amount);battleLog(`${user.name} использует особый приём: ${target.name} −${dealt} HP.`);break;}
   }
   b.acted.push(b.selected);
   if(checkBattleEnd())return;
@@ -255,4 +263,4 @@ function showMatchDetails(index){
   const m=state.matchHistory[index];if(!m)return;
   openModal(`<div class="eyebrow">MATCH REPORT · ${escapeHTML(m.dateLabel||'')}</div><h2 class="modal-title">${m.result==='win'?'Победа':'Поражение'} против ${escapeHTML(m.botName||'Соперник')}</h2><p class="modal-subtitle">${escapeHTML(m.botDivision||'')} · Уровень ${m.botRank||'—'}/30 · ${m.rounds||1} раундов</p><div class="detail-stats match-detail-stats"><div class="detail-stat"><span>Нанесено урона</span><b>${money(m.damageDealt||0)}</b></div><div class="detail-stat"><span>Получено урона</span><b>${money(m.damageTaken||0)}</b></div><div class="detail-stat"><span>Восстановлено HP</span><b>${money(m.healing||0)}</b></div><div class="detail-stat"><span>Побеждено</span><b>${m.knockouts||0}</b></div><div class="detail-stat"><span>Действий</span><b>${m.actions||0}</b></div><div class="detail-stat"><span>Время</span><b>${m.duration||0} сек.</b></div></div><div class="match-detail-reward">Награда: +${money(m.reward||0)} банкнот</div><button class="btn btn-primary btn-block" data-action="modal-close">ЗАКРЫТЬ</button>`);
 }
-function exitBattle(){battleSession=null;setView('battle');}
+function exitBattle(){battleSession=null;state.matchFound=false;state.selectedBotId=null;save();setView('battle');}

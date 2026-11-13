@@ -27,7 +27,7 @@
       case'stat-upgrade':upgradeStat(id,el.dataset.stat);break;
       case'upgrade-skill':upgradeSkill(id,Number(el.dataset.index));break;
       case'xp-card':trainCard(id);break;
-      case'bot-select':selectBot(id);break;
+      case'match-find':findOpponent();break;
       case'match-details':showMatchDetails(Number(el.dataset.index));break;
       case'battle-start':startBattle();break;
       case'select-ally':selectAlly(Number(el.dataset.index));break;

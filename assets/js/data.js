@@ -143,8 +143,7 @@ window.GG_CARDS = [
     skills:[
       {name:'Резонанс',desc:'Разрушительная магическая атака по выбранной карте.',type:'damage',value:150,cost:70,target:'enemy'},
       {name:'Удар посохом',desc:'Наносит физический удар магическим посохом.',type:'damage',value:70,cost:30,target:'enemy'},
-      {name:'Магический барьер',desc:'Снижает входящий урон на 60% до следующего хода.',type:'mitigation',value:60,cost:45,target:'self'},
-      {name:'Страпон',desc:'Особый приём: наносит 99% текущего HP цели, но не может опустить её ниже 1 HP. Один раз за бой.',type:'percentDamage',value:99,cost:100,target:'enemy',once:true}
+      {name:'Магический барьер',desc:'Снижает входящий урон на 60% до следующего хода.',type:'mitigation',value:60,cost:45,target:'self'}
     ], likes:['Книга','Кольцо','Платье'], dislikes:['Коробка конфет'], spots:['Лес','Музей','Театр'], image:"https://images-ng.pixai.art/gi/orig/dac78435-57ca-40ed-8510-47647493fbd4?utm_source=chatgpt.com"
   }
 ];

@@ -13,7 +13,7 @@ function defaultState(){
     gifts:{'Букет цветов':1,'Коробка конфет':1},materials:{card:1,stat:1,skill:2},
     theme:'midnight',lang:'ru',dailyClaim:'',dailyOffersDate:'',dailyOffers:[],promos:[],
     wins:0,losses:0,starterClaimed:false,createdAt:Date.now(),
-    selectedBotId:'bot01',battleDay:'',battlesToday:0,
+    selectedBotId:null,matchFound:false,battleDay:'',battlesToday:0,
     matchStats:{played:0,wins:0,losses:0,streak:0,bestStreak:0,damageDealt:0,damageTaken:0,healing:0,knockouts:0},
     matchHistory:[]
   };
