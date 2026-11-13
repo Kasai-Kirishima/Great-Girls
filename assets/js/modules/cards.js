@@ -38,11 +38,116 @@
   function claimDaily(){if(state.dailyClaim===dayKey())return;state.dailyClaim=dayKey();const kind=random(['banknotes','rubies','gift','upgrade']);let reward;if(kind==='banknotes')reward=createReward('banknotes',{amount:Math.floor(150+Math.random()*351)});else if(kind==='rubies')reward=createReward('rubies',{amount:Math.floor(1+Math.random()*4)});else if(kind==='gift'){const gift=random(GG_GIFTS);reward=createReward('gift',{name:gift.name,icon:gift.icon,amount:1});}else reward=createReward('upgrade',{material:random(['card','stat','skill']),amount:1});save();openRewards([reward],'Ежедневная награда · 1 предмет');render();}
 
   function openGiftModal(instanceId){const inst=getOwned(instanceId);if(!inst)return;const card=getData(inst.cardId);openModal(`<div class="eyebrow">GG / GIFT</div><h2 class="modal-title">Подарок для ${escapeHTML(card.name)}</h2><p class="modal-subtitle">У каждого персонажа есть предпочтения. Любимый подарок продлевает отношения сильнее.</p><div class="summary-grid">${GG_GIFTS.map(g=>`<button class="summary-item" data-action="give-gift" data-id="${instanceId}" data-gift="${escapeHTML(g.name)}" ${!(state.gifts[g.name]>0)?'disabled':''}><span>${g.icon}</span><b>${escapeHTML(g.name)}</b><small>В наличии: ${state.gifts[g.name]||0}</small></button>`).join('')}</div>`);}
-  function giveGift(instanceId,name){const inst=getOwned(instanceId);if(!inst||!state.gifts[name])return;const card=getData(inst.cardId);state.gifts[name]--;let days=1,msg=t('giftNeutral');if(card.likes.includes(name)){days=3;msg=t('giftLiked');}else if(card.dislikes.includes(name)){days=0;msg=t('giftDisliked');}else days=1;if(days)addDays(inst,days);if(!state.gifts[name])delete state.gifts[name];save();closeModal();toast(`${msg} ${days?`+${days} ${t('daysAdded')}`:'Срок не изменился.'}`);render();}
+  function giveGift(instanceId,name){
+    const inst=getOwned(instanceId);
+    if(!inst||!state.gifts[name])return;
+    const card=getData(inst.cardId);
+    if(inst.giftDay!==dayKey()){inst.giftDay=dayKey();inst.giftsToday=0;}
+    if((inst.giftsToday||0)>=2){toast('Этой карточке можно подарить не больше двух подарков в день.','error');return;}
+    inst.giftsToday=(inst.giftsToday||0)+1;
+    state.gifts[name]--;
+    let days=1,msg=t('giftNeutral');
+    if(card.likes.includes(name)){days=3;msg=t('giftLiked');}
+    else if(card.dislikes.includes(name)){days=-1;msg=t('giftDisliked');}
+    if(days>0){const actual=addDays(inst,days);msg+=actual<days?` (добавлено ${actual} дн. из-за лимита 60 дней)`:'';}
+    else if(days<0){inst.expiresAt=Math.max(Date.now(),inst.expiresAt+days*DAY);}
+    if(!state.gifts[name])delete state.gifts[name];
+    save();closeModal();toast(`${msg} ${days>0?`+${Math.min(days,60)} дн.`:days<0?'−1 день':'Срок не изменился.'}`);render();
+  }
   const classPrompts={Медик:['Поговорить о любимом деле и лечении','Поспорить о том, кто сильнее'],Тактик:['Обсудить планы и стратегию','Говорить только о себе'],Контролёр:['Дать ей вести разговор','Постоянно перебивать'],Защитник:['Поговорить о её опыте и взглядах','Хвастаться своими победами'],Штурмовик:['Обсудить яркие приключения','Пожаловаться на скуку'],Подрывник:['Обсудить необычные впечатления','Читать скучную лекцию'],Поддержка:['Поблагодарить за заботу','Игнорировать её мнение'],Дуэлянт:['Отметить её сильные стороны','Сравнивать её с другими'],Универсал:['Узнать, что ей сейчас интересно','Навязывать свои планы'],Регенератор:['Поговорить о любимых местах','Обсуждать только работу'],Архимаг:['Обсудить магию и необычные идеи','Спорить о бытовых мелочах']};
-  function openDateModal(instanceId){const inst=getOwned(instanceId);if(!inst)return;const card=getData(inst.cardId);openModal(`<div class="eyebrow">GG / DATE</div><h2 class="modal-title">Свидание с ${escapeHTML(card.name)}</h2><p class="modal-subtitle">Выбери место. У персонажей есть предпочтения — удачное свидание продлевает отношения.</p><div class="summary-grid">${GG_LOCATIONS.map(l=>`<button class="summary-item" data-action="date-location" data-id="${instanceId}" data-location="${escapeHTML(l.name)}"><span>${l.icon}</span><b>${escapeHTML(l.name)}</b><small>${l.price?`▰ ${l.price} BN`:'Бесплатно'}</small></button>`).join('')}</div>`);}
-  function dateLocation(instanceId,location){const inst=getOwned(instanceId);if(!inst)return;const spot=GG_LOCATIONS.find(l=>l.name===location);if(!spot)return;if(state.banknotes<spot.price){toast('Недостаточно банкнот для этого свидания.','error');return;}state.banknotes-=spot.price;const card=getData(inst.cardId);const options=classPrompts[card.cls]||['Выслушать её и задать вопросы','Говорить только о себе'];const shuffled=shuffle(options);const preferredIndex=options[0]===shuffled[0]?0:1;openModal(`<div class="eyebrow">GG / DATE · ${escapeHTML(location)}</div><h2 class="modal-title">${t('dateQuestion')}</h2><p class="modal-subtitle">${escapeHTML(card.name)} смотрит на тебя и ждёт ответа.</p><div class="date-event"><b>О чём поговорить?</b><p>Выбери подходящий вариант. Важны и место, и то, как ты ведёшь разговор.</p><div class="choice-grid">${shuffled.map((op,i)=>`<button class="choice-btn" data-action="date-choice" data-id="${instanceId}" data-location="${escapeHTML(location)}" data-choice="${i}" data-correct="${i===preferredIndex?'1':'0'}">${escapeHTML(op)}</button>`).join('')}</div></div>`);}
-  function dateChoice(instanceId,location,correct){const inst=getOwned(instanceId);if(!inst)return;const card=getData(inst.cardId);const liked=card.spots.includes(location);let days=0;if(correct&&liked)days=3;else if(correct||liked)days=1;else days=-1;if(days>0)addDays(inst,days);else if(days<0){inst.expiresAt-=DAY;if(inst.expiresAt<=Date.now()){state.collection=state.collection.filter(x=>x.instanceId!==instanceId);}}save();const msg=days>0?t('dateGood'):t('dateBad');openModal(`<div class="date-result"><div style="font-size:33px">${days>0?'♡':'…'}</div><strong>${msg}</strong><span>${days>0?`+${days} ${t('daysAdded')}`:`${Math.abs(days)} ${t('dayRemoved')}`}</span></div><button class="btn btn-primary btn-block" style="margin-top:14px" data-action="modal-close">${t('close')}</button>`);}
+  const dateStageData=[
+    [
+      {text:'Спросить о том, что ей действительно нравится',score:2},
+      {text:'Обсудить планы и интересы',score:1},
+      {text:'Говорить только о себе',score:-1}
+    ],
+    [
+      {text:'Предложить занятие, которое ей интересно',score:2},
+      {text:'Спросить, чего ей хочется прямо сейчас',score:1},
+      {text:'Самостоятельно решить за неё',score:-1}
+    ],
+    [
+      {text:'Спокойно решить неожиданную проблему вместе',score:2},
+      {text:'Разрядить ситуацию уместной шуткой',score:1},
+      {text:'Раздражаться и обвинять её',score:-1}
+    ],
+    [
+      {text:'Искренне поблагодарить за вечер и предложить новую встречу',score:2},
+      {text:'Сделать комплимент и попрощаться',score:1},
+      {text:'Резко попрощаться и уйти',score:-1}
+    ]
+  ];
+  const dateStageTitles=['Первое впечатление','Совместное занятие','Неожиданный момент','Завершение вечера'];
+  const locationPrompts={
+    'Парк':['Предложить прогулку по красивому маршруту','Найти тихое место и поговорить','Всё время смотреть в телефон'],
+    'Кафе':['Предложить выбрать десерт вместе','Спросить, какой напиток она любит','Заказать за неё, не спросив'],
+    'Ресторан':['Учитывать её вкус и дать выбрать блюдо','Обсудить атмосферу и музыку','Торопить её с заказом'],
+    'Музей':['Обсудить экспонат, который её заинтересовал','Предложить выбрать любимый зал','Проходить всё молча и торопиться'],
+    'Лес':['Выбрать безопасную красивую тропу','Сделать паузу и насладиться природой','Уйти далеко без предупреждения'],
+    'Дома у неё':['Предложить фильм или настольную игру','Спросить, чем ей хочется заняться','Начать переставлять её вещи'],
+    'Дома у тебя':['Подготовить уютную атмосферу','Предложить вместе приготовить что-нибудь','Оставить её одну и заняться своими делами'],
+    'В отеле':['Заранее продумать комфортный план вечера','Уточнить, всё ли ей удобно','Игнорировать её просьбы'],
+    'Театр':['Обсудить постановку после спектакля','Узнать, что ей понравилось','Перебивать во время представления'],
+    'В кинотеатре':['Выбрать фильм с учётом её вкусов','Взять любимые закуски','Выбрать фильм только по своему вкусу']
+  };
+  function openDateModal(instanceId){
+    const inst=getOwned(instanceId);if(!inst)return;
+    if(inst.lastDateAt&&Date.now()-inst.lastDateAt<DAY){
+      const hours=Math.ceil((DAY-(Date.now()-inst.lastDateAt))/3600000);
+      toast(`Следующее свидание с этой карточкой будет доступно примерно через ${hours} ч.`,'error');return;
+    }
+    const card=getData(inst.cardId);
+    openModal(`<div class="eyebrow">GG / DATE</div><h2 class="modal-title">Свидание с ${escapeHTML(card.name)}</h2><div class="date-profile-strip"><span>${escapeHTML(card.cls)}</span><span>3 ЭТАПА</span><span>Лимит: 1 раз в 24 часа</span></div><p class="modal-subtitle">Выбери место. Затем пройди три этапа свидания — разговор, совместное занятие и прощание.</p><div class="date-location-grid">${GG_LOCATIONS.map(l=>`<button class="date-location-card" data-action="date-location" data-id="${instanceId}" data-location="${escapeHTML(l.name)}"><span>${l.icon}</span><b>${escapeHTML(l.name)}</b><small>${l.price?`▰ ${money(l.price)} BN`:'Бесплатно'}</small><em>${card.spots.includes(l.name)?'Ей нравится':'Неизвестное место'}</em></button>`).join('')}</div>`);
+  }
+  function dateLocation(instanceId,location){
+    const inst=getOwned(instanceId);if(!inst)return;
+    if(inst.lastDateAt&&Date.now()-inst.lastDateAt<DAY){toast('С этой карточкой уже было свидание за последние 24 часа.','error');return;}
+    const spot=GG_LOCATIONS.find(l=>l.name===location);if(!spot)return;
+    if(state.banknotes<spot.price){toast('Недостаточно банкнот для этого свидания.','error');return;}
+    const card=getData(inst.cardId);
+    dateSession={instanceId,location,price:spot.price,step:0,score:0,cardId:card.id};
+    renderDateStage();
+  }
+  function renderDateStage(){
+    if(!dateSession)return;
+    const inst=getOwned(dateSession.instanceId);if(!inst){closeModal();return;}
+    const card=getData(dateSession.cardId),step=dateSession.step;
+    let options=dateStageData[step].map(x=>({...x}));
+    if(step===0){
+      const prompts=classPrompts[card.cls]||[];
+      if(prompts.length){options=[{text:prompts[0],score:2},{text:'Обсудить планы и интересы',score:1},{text:prompts[1],score:-1}];}
+    } else if(step===1){
+      const prompts=locationPrompts[dateSession.location]||[];
+      if(prompts.length)options=[{text:prompts[0],score:2},{text:prompts[1],score:1},{text:prompts[2],score:-1}];
+    }
+    options=shuffle(options);
+    dateSession.currentOptions=options;
+    const progress=[0,1,2,3].map(i=>`<i class="${i<=step?'active':''}"></i>`).join('');
+    openModal(`<div class="date-stage-top"><div class="eyebrow">GG / DATE · ${escapeHTML(dateSession.location)}</div><span>ЭТАП ${step+1} / 4</span></div><div class="date-progress">${progress}</div><h2 class="modal-title">${dateStageTitles[step]}</h2><p class="modal-subtitle">${escapeHTML(card.name)} ждёт твоего решения. Выбор повлияет на итог встречи.</p><div class="date-scene"><span>${GG_LOCATIONS.find(l=>l.name===dateSession.location)?.icon||'♡'}</span><b>${['О чём поговорите?','Что будете делать вместе?','Как поступите в неожиданной ситуации?','Как закончится вечер?'][step]}</b><small>${['Первое впечатление задаёт настроение.','Выбор занятия зависит от места встречи.','Твоя реакция повлияет на настроение свидания.','Последний момент тоже имеет значение.'][step]}</small></div><div class="date-choice-list">${options.map((op,i)=>`<button class="date-choice" data-action="date-choice" data-id="${dateSession.instanceId}" data-choice="${i}"><span>${['A','B','C'][i]}</span><b>${escapeHTML(op.text)}</b><i>Выбрать</i></button>`).join('')}</div>`);
+  }
+  function dateChoice(instanceId,choiceIndex){
+    const session=dateSession;if(!session||session.instanceId!==instanceId)return;
+    const inst=getOwned(instanceId);if(!inst){closeModal();return;}
+    const choice=session.currentOptions?.[choiceIndex];if(!choice)return;
+    session.score+=choice.score;
+    session.step++;
+    if(session.step<4){renderDateStage();return;}
+    const card=getData(session.cardId),likesPlace=card.spots.includes(session.location);
+    session.score+=likesPlace?2:-2;
+    if(state.banknotes<session.price){toast('Не хватает банкнот для оплаты свидания.','error');closeModal();return;}
+    state.banknotes-=session.price;
+    inst.lastDateAt=Date.now();
+    let days=session.score>=8?5:session.score>=5?3:session.score>=2?1:-2;
+    let actual=0;
+    if(days>0)actual=addDays(inst,days);
+    else{const before=inst.expiresAt;inst.expiresAt=Math.max(Date.now(),inst.expiresAt+days*DAY);actual=-Math.round((before-inst.expiresAt)/DAY);}
+    const resultText=days>0?(actual>0?`+${actual} дней отношений`:'Лимит отношений уже достигнут.'):`${actual} дней отношений`;
+    const mood=days>=3?'Идеальное свидание':days>0?'Хороший вечер':'Встреча прошла неудачно';
+    const score=session.score;
+    dateSession=null;
+    save();
+    openModal(`<div class="date-result date-result-epic"><div class="eyebrow">DATE COMPLETE</div><div class="date-result-symbol">${days>0?'♡':'…'}</div><h2>${mood}</h2><p>${escapeHTML(card.name)} запомнит эту встречу.</p><div class="date-result-score"><span>Совместимость</span><b>${Math.max(0,Math.min(100,Math.round((score+6)/16*100)))}%</b></div><div class="date-result-days">${resultText}</div><button class="btn btn-primary btn-block" style="margin-top:18px" data-action="modal-close">ЗАВЕРШИТЬ</button></div>`);
+  }
 
   function redeem(code){const normalized=String(code||'').trim().toLowerCase();if(!normalized){toast('Введите промокод.','error');return;}if(state.promos.includes(normalized)){toast('Этот промокод уже использован.','error');return;}let rewards=[];
     if(normalized==='giv4ikmani'){rewards=[createReward('banknotes',{amount:1000000}),createReward('rubies',{amount:1000})];}

@@ -36,7 +36,7 @@ window.GG_CARDS = [
       {name:'Бумажные крылья',desc:'Блокирует 70 урона.',type:'shield',value:70,cost:30,target:'self'},
       {name:'Взрывные печати',desc:'Наносит случайный урон: 25 / 50 / 75 / 100.',type:'randomdamage',values:[25,50,75,100],cost:40,target:'enemy'},
       {name:'Неуязвимость',desc:'Полностью блокирует входящий урон в течение одного хода.',type:'invuln',value:1,cost:55,target:'self'}
-    ], likes:['Книга','Букет цветов','Платье'], dislikes:['Телефон'], spots:['Музей','Лес','Театр'], image:"https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/3943babb-bbdf-470a-b209-ed556516a5f4/dg17t25-81acfd69-454d-4ad5-8d7e-f7b87c3594f4.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwib2FpIjpbeyJwYXRoIjoiL2YvMzk0M2JhYmItYmJkZi00NzBhLWIyMDktZWQ1NTY1MTZhNWY0L2RnMTd0MjUtODFhY2ZkNjktNDU0ZC00YWQ1LThkN2UtZjdiODdjMzU5NGY0LmpwZyJ9XSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.nCBitbTeF3AScQERPa5agoQ9nx6ZeKdzkmvwgrvVnfk"
+    ], likes:['Книга','Букет цветов','Платье'], dislikes:['Телефон'], spots:['Музей','Лес','Театр'], image:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyu3S88KXbKAZmQ6QoTxbWcZjAN4wBRZw7RTX621SUYSvalcJqozD08J6L&s=10"
   },
   {
     id:'power', name:'Пауэр', universe:'Chainsaw Man', collection:'Прогулка', cls:'Штурмовик', rating:80, hp:300,

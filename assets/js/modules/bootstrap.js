@@ -20,7 +20,7 @@
       const q = catalogFilters.q.toLowerCase();
       const cards=$$('#catalogGrid .catalog-card-open');
       let shown=0;
-      cards.forEach(btn => { const visible=btn.textContent.toLowerCase().includes(q); btn.style.display=visible?'':'none'; if(visible)shown++; });
+      cards.forEach(btn => { const visible=(btn.dataset.search||btn.textContent.toLowerCase()).includes(q); btn.style.display=visible?'':'none'; if(visible)shown++; });
       const count=content.querySelector('.filter-count'); if(count)count.textContent=`Найдено: ${shown}`;
     }
     if (e.target.dataset.filter === 'q') {
@@ -40,6 +40,9 @@
     if (e.target.dataset.catalogFilter && e.target.dataset.catalogFilter !== 'q') {
       catalogFilters[e.target.dataset.catalogFilter] = e.target.value;
       render();
+    }
+    if (e.target.matches('.battle-ally-target')) {
+      selectAllyTarget(Number(e.target.value));
     }
     if (e.target.id === 'languageSelect') {
       state.lang = e.target.value;
@@ -68,10 +71,10 @@
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result);
-        if (![1, 2, 3].includes(parsed.version) || !Array.isArray(parsed.collection)) throw new Error('bad save');
+        if (![1, 2, 3, 4, 5].includes(parsed.version) || !Array.isArray(parsed.collection)) throw new Error('bad save');
         const currentNickname = state.nickname || '';
         const base = defaultState();
-        state = { ...base, ...parsed, version: 3, nickname: parsed.nickname || currentNickname, gifts: { ...base.gifts, ...(parsed.gifts || {}) }, materials: { ...base.materials, ...(parsed.materials || {}) } };
+        state = { ...base, ...parsed, version: 5, nickname: parsed.nickname || currentNickname, gifts: { ...base.gifts, ...(parsed.gifts || {}) }, materials: { ...base.materials, ...(parsed.materials || {}) }, matchStats: { ...base.matchStats, ...(parsed.matchStats || {}), played: parsed.matchStats?.played ?? ((parsed.wins || 0) + (parsed.losses || 0)), wins: parsed.matchStats?.wins ?? (parsed.wins || 0), losses: parsed.matchStats?.losses ?? (parsed.losses || 0) }, matchHistory: Array.isArray(parsed.matchHistory) ? parsed.matchHistory.slice(0,30) : [] };
         save();
         closeModal();
         setView(currentView);
