@@ -7,6 +7,7 @@
   <meta name="description" content="Great Girls — браузерная коллекционная карточная игра">
   <title>Great Girls — Collect. Develop. Battle.</title>
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/account.css">
 </head>
 <body data-theme="midnight">
   <div class="app-shell">
@@ -18,7 +19,8 @@
       <div class="side-label" data-i18n="menu">МЕНЮ</div>
       <nav class="main-nav" aria-label="Main navigation">
         <button class="nav-item active" data-view="home"><span>⌂</span><b data-i18n="overview">Обзор</b></button>
-        <button class="nav-item" data-view="collection"><span>▤</span><b data-i18n="collection">Коллекция</b><i class="nav-count" id="collectionCount">0</i></button>
+        <button class="nav-item" data-view="collection"><span>▤</span><b data-i18n="myCollection">Моя коллекция</b><i class="nav-count" id="collectionCount">0</i></button>
+        <button class="nav-item" data-view="catalog"><span>▦</span><b data-i18n="allCards">Все карточки игры</b></button>
         <button class="nav-item" data-view="shop"><span>◇</span><b data-i18n="shop">Магазин</b></button>
         <button class="nav-item" data-view="packs"><span>▣</span><b data-i18n="packs">Паки</b></button>
         <button class="nav-item" data-view="battle"><span>⚔</span><b data-i18n="battle">Сражения</b></button>
@@ -30,7 +32,7 @@
         <button class="nav-item" data-view="settings"><span>⚙</span><b data-i18n="settings">Настройки</b></button>
       </nav>
       <div class="sidebar-bottom">
-        <div class="version-chip"><span class="live-dot"></span> GG OFFLINE · V0.2</div>
+        <div class="version-chip"><span class="live-dot"></span> GG OFFLINE · V0.4</div>
         <div class="sidebar-note">ТВОЯ КОЛЛЕКЦИЯ. ТВОЯ ИСТОРИЯ.</div>
       </div>
     </aside>
@@ -42,6 +44,7 @@
         <div class="topbar-right">
           <div class="currency-pill cash"><span>▰</span><strong id="cashValue">0</strong><small>BN</small></div>
           <div class="currency-pill ruby"><span>◆</span><strong id="rubyValue">0</strong><small>R</small></div>
+          <span class="profile-name" id="profileName"></span>
           <button class="avatar-button" id="profileButton" title="Профиль">GG</button>
         </div>
       </header>
@@ -57,8 +60,35 @@
       <div id="modalContent"></div>
     </section>
   </div>
+
+  <section class="account-setup hidden" id="accountSetup" aria-labelledby="accountTitle">
+    <div class="account-card">
+      <div class="account-brand"><span class="account-brand-mark">GG</span><span>GREAT GIRLS</span></div>
+      <div class="account-eyebrow">YOUR COLLECTION · YOUR STORY</div>
+      <h1 id="accountTitle">Создание аккаунта</h1>
+      <p class="account-description">Придумай ник, под которым будешь играть. Пароль и почта пока не нужны.</p>
+      <form id="accountForm" class="account-form" autocomplete="off">
+        <label for="nicknameInput">Игровой ник</label>
+        <input id="nicknameInput" name="nickname" type="text" minlength="2" maxlength="20" placeholder="Например, Zero" required autocomplete="nickname">
+        <div class="account-hint">От 2 до 20 символов. Ник можно будет изменить позже.</div>
+        <div class="account-error" id="accountError" role="alert"></div>
+        <button class="btn btn-primary account-submit" type="submit">Создать аккаунт <span>→</span></button>
+      </form>
+      <div class="account-footnote">Офлайн-профиль · Данные сохраняются в этом браузере</div>
+    </div>
+  </section>
   <div class="toast-stack" id="toastStack"></div>
+  <!-- Static game content -->
   <script src="assets/js/data.js"></script>
-  <script src="assets/js/app.js"></script>
+  <!-- Core and persistence -->
+  <script src="assets/js/modules/core.js"></script>
+  <script src="assets/js/modules/state.js"></script>
+  <!-- Independent feature modules -->
+  <script src="assets/js/modules/views.js"></script>
+  <script src="assets/js/modules/cards.js"></script>
+  <script src="assets/js/modules/battle.js"></script>
+  <script src="assets/js/modules/actions.js"></script>
+  <!-- UI event router and startup -->
+  <script src="assets/js/modules/bootstrap.js"></script>
 </body>
 </html>
